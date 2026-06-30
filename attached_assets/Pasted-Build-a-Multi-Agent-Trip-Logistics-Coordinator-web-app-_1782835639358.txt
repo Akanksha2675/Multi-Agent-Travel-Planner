@@ -1,0 +1,72 @@
+Build a Multi-Agent Trip Logistics Coordinator web app using React (frontend), 
+Express + Node.js (backend), and LangChain.js for AI agent orchestration. This 
+is a competition/demo project, so prioritize a working, visually impressive 
+end-to-end flow over exhaustive edge-case handling.
+
+## CORE CONCEPT
+Instead of one AI generating a trip plan, use multiple specialized AI agents 
+that each own one part of the trip and negotiate with each other when their 
+outputs conflict (e.g., budget vs. hotel cost). Show this negotiation process 
+visibly in the UI, not just the final itinerary.
+
+## AGENTS (each as a separate LangChain.js chain/agent with its own tool access)
+1. Orchestrator Agent — receives the user's trip request (destination, dates, 
+   budget, preferences), decomposes it into sub-tasks, delegates to the other 
+   agents, merges their outputs into a final itinerary, and resolves conflicts 
+   by sending tasks back to agents with adjusted constraints.
+2. Flights Agent — searches and returns flight options using a real flight 
+   search API (use Amadeus Self-Service API, which has a free tier).
+3. Hotels Agent — searches and returns lodging options using a real API 
+   (use Amadeus Hotel Search API or Booking.com RapidAPI free tier).
+4. Activities Agent — recommends things to do and builds a day-by-day plan. 
+   Use RAG here (see below) combined with a real places API (Google Places 
+   API or Foursquare Places API) for live, bookable suggestions.
+5. Budget Agent — tracks running total cost against the user's stated budget. 
+   If a sub-total exceeds budget, it must reject the relevant agent's output 
+   with a clear reason and a target adjustment (e.g., "reduce hotel budget by 
+   $200/night"), triggering that agent to retry.
+
+## CONFLICT RESOLUTION (important — make this visible and real, not hidden)
+When the Budget Agent rejects another agent's output, the orchestrator should:
+- Log the rejection reason
+- Send the specific agent back with adjusted constraints
+- Stream this negotiation step-by-step to the frontend so the user can watch 
+  agents "argue" and resolve, not just see a final static result
+
+## RAG IMPLEMENTATION
+Set up a vector store (use Chroma, since it's free/local) containing curated 
+destination knowledge: city guides, "best time to visit" info, neighborhood 
+descriptions, and local tips. The Activities Agent should retrieve from this 
+store to ground its recommendations in more specific, opinionated detail 
+(not generic top-10 lists), then combine that with live data from the places 
+API. Use OpenAI or Anthropic embeddings for the vector store.
+
+## TECH STACK SPECIFICS
+- Frontend: React (functional components, hooks), clean modern UI, a chat-style 
+  input for trip requests, plus a structured itinerary view (day-by-day cards) 
+  and a live "agent activity feed" panel showing each agent's status/output/
+  negotiation in real time (use websockets or server-sent events for streaming).
+- Backend: Express + Node.js, REST endpoint POST /api/plan-trip that kicks off 
+  the agent flow, plus a streaming endpoint for live agent status updates.
+- AI orchestration: LangChain.js, using its agent/tool-calling capabilities, 
+  with Claude or GPT-4 as the underlying LLM for each agent.
+- Vector DB: Chroma (local, no paid infra needed).
+- APIs: Amadeus (flights + hotels, free tier), Google Places or Foursquare 
+  (activities), OpenAI/Anthropic for embeddings and LLM calls.
+
+## OUTPUT
+1. A working React frontend where a user enters trip details (destination, 
+   dates, budget, preferences) and gets back a full day-by-day itinerary.
+2. A visible, real-time feed showing the agents working and negotiating 
+   (e.g., "Budget Agent: Hotel exceeds budget by $150/night, requesting 
+   cheaper alternative" → "Hotel Agent: retrying with new constraint" → 
+   "Budget Agent: approved").
+3. Clean, well-commented code structured into clear folders: /client (React), 
+   /server (Express), /server/agents (each agent as its own file), /server/rag 
+   (vector store setup and retrieval logic).
+4. A .env.example file listing all required API keys.
+5. A README explaining setup, required API keys, and how to run the project locally.
+
+Build this as a complete, runnable project, not a partial scaffold. Use mock/
+fallback data gracefully if an API key is missing, so the demo doesn't break 
+during judging if there's a rate limit issue.

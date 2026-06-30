@@ -1,0 +1,56 @@
+## UI/UX REQUIREMENTS
+The UI must feel trustworthy, clean, and professional at first glance — this 
+is being judged, so visual polish matters as much as functionality. Avoid 
+generic AI-template look (no default purple gradients, no boilerplate "Welcome" 
+hero sections). Aim for a feel similar to modern travel/fintech apps (e.g., 
+Linear, Notion, or a clean booking site) — lots of whitespace, clear hierarchy, 
+restrained color palette.
+
+Specific requirements:
+
+1. LAYOUT — Two-column main view once a trip is being planned:
+   - Left/main column: the trip input form (collapses to a summary once 
+     submitted) and the resulting itinerary (day-by-day cards)
+   - Right column (or collapsible side panel): the live "agent activity feed" 
+     showing real-time status of each agent (e.g., a small card per agent 
+     with a status indicator — thinking/working/done/rejected — and a short 
+     log of what it's doing)
+
+2. TRUST/RELIABILITY SIGNALS (important, make these visible immediately):
+   - Clear loading states for every async step — never a blank screen or 
+     spinner with no context. Show what's actually happening ("Searching 
+     flights...", "Checking budget...")
+   - Each agent in the activity feed should have a visible status badge 
+     (e.g., colored dot or label: idle / working / approved / rejected / 
+     retrying) so the system's progress is legible at a glance, not a black box
+   - Final itinerary should clearly show WHY each choice was made (e.g., a 
+     small "Why this hotel?" expandable note sourced from the agent's reasoning) 
+     — this builds trust that it's not arbitrary
+   - Budget should be shown as a persistent, always-visible progress bar 
+     (spent vs. total) that updates live as agents work, not just a final number
+
+3. VISUAL STYLE:
+   - Clean sans-serif typography, generous spacing, no clutter
+   - A restrained color palette: one primary accent color (e.g., a deep blue 
+     or teal — avoid default purple/violet AI-tool gradients), neutral grays/
+     whites for background, and clear semantic colors for status (green = 
+     approved, amber = working/retrying, red = rejected/over budget)
+   - Subtle motion only — smooth transitions when agent statuses update or 
+     itinerary cards load, no flashy or distracting animation
+   - Itinerary day-cards should include a small thumbnail/icon per activity, 
+     time blocks, and estimated cost per item, laid out for easy scanning
+
+4. FIRST IMPRESSION (landing/input screen):
+   - Should look like a real product, not a demo. Simple trip input form 
+     (destination, dates, budget, preferences) with clear labels, sensible 
+     defaults, and a single obvious call-to-action button ("Plan My Trip")
+   - Brief, confident one-line description of what the tool does — no long 
+     marketing copy
+
+5. RESPONSIVENESS — must look clean on both desktop and a typical laptop 
+   screen size used for live judging demos (judges often view on a shared 
+   screen or projector, so prioritize readability and contrast over density).
+
+Use Tailwind CSS for styling. Keep components modular and reusable (e.g., 
+AgentStatusCard, ItineraryDayCard, BudgetProgressBar) so the UI is easy to 
+adjust if needed after generation.
