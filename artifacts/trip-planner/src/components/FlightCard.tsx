@@ -35,7 +35,7 @@ export function FlightCard({ flight }: Props) {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-lg text-slate-900">${flight.price}</div>
+              <div className="font-bold text-lg text-slate-900">₹{flight.price.toLocaleString('en-IN')}</div>
               <div className="text-xs text-slate-500 font-medium">Round trip</div>
             </div>
           </div>

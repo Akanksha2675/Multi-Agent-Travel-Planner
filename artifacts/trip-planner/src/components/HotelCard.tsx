@@ -34,8 +34,8 @@ export function HotelCard({ hotel }: Props) {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-lg text-slate-900">${hotel.totalPrice || hotel.pricePerNight}</div>
-              <div className="text-xs text-slate-500 font-medium">${hotel.pricePerNight} / night</div>
+              <div className="font-bold text-lg text-slate-900">₹{(hotel.totalPrice || hotel.pricePerNight).toLocaleString('en-IN')}</div>
+              <div className="text-xs text-slate-500 font-medium">₹{hotel.pricePerNight.toLocaleString('en-IN')} / night</div>
             </div>
           </div>
 

@@ -36,8 +36,8 @@ export function checkFlightBudget(flight: FlightOption, allocation: BudgetAlloca
   const overage = flight.price - allocation.flights;
   return {
     approved: false,
-    reason: `Flight cost $${flight.price} exceeds flight budget of $${allocation.flights} by $${overage}`,
-    adjustment: `Find a flight costing at most $${allocation.flights} total`,
+    reason: `Flight cost ₹${flight.price} exceeds flight budget of ₹${allocation.flights} by ₹${overage}`,
+    adjustment: `Find a flight costing at most ₹${allocation.flights} total`,
     overage,
   };
 }
@@ -51,8 +51,8 @@ export function checkHotelBudget(hotel: HotelOption, allocation: BudgetAllocatio
   const maxPerNight = Math.floor(allocation.hotel / nights);
   return {
     approved: false,
-    reason: `Hotel total $${hotel.totalPrice} exceeds hotel budget of $${allocation.hotel} by $${overage}`,
-    adjustment: `Find a hotel at max $${maxPerNight}/night (total max $${allocation.hotel})`,
+    reason: `Hotel total ₹${hotel.totalPrice} exceeds hotel budget of ₹${allocation.hotel} by ₹${overage}`,
+    adjustment: `Find a hotel at max ₹${maxPerNight}/night (total max ₹${allocation.hotel})`,
     overage,
   };
 }
@@ -68,8 +68,8 @@ export function checkActivitiesBudget(
   const overage = total - allocation.activities;
   return {
     approved: false,
-    reason: `Activities total $${total} exceeds activities budget of $${allocation.activities} by $${overage}`,
-    adjustment: `Reduce activities to fit within $${allocation.activities} total`,
+    reason: `Activities total ₹${total} exceeds activities budget of ₹${allocation.activities} by ₹${overage}`,
+    adjustment: `Reduce activities to fit within ₹${allocation.activities} total`,
     overage,
   };
 }

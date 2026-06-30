@@ -19,7 +19,7 @@ export async function searchFlights(
 - Destination: ${request.destination}
 - Travel dates: ${request.startDate} to ${request.endDate} (${nights} nights)
 - Travelers: ${request.travelers}
-- Flight budget: $${flightBudget} total for all travelers
+- Flight budget: ₹${flightBudget} total for all travelers (currency: Indian Rupees INR)
 - Preferences: ${request.preferences || "none"}
 
 Return a JSON object with these exact fields:

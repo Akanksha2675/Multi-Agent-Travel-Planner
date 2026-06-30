@@ -20,8 +20,8 @@ export async function searchHotels(
 - Destination: ${request.destination}
 - Dates: ${request.startDate} to ${request.endDate} (${nights} nights)
 - Travelers: ${request.travelers}
-- Total hotel budget: $${hotelBudget}
-- Max per night: $${Math.floor(hotelBudget / nights)}
+- Total hotel budget: ₹${hotelBudget} (currency: Indian Rupees INR)
+- Max per night: ₹${Math.floor(hotelBudget / nights)}
 - Preferences: ${request.preferences || "none"}
 ${retryNote ? `- CONSTRAINT: ${retryNote}` : ""}
 
@@ -37,7 +37,7 @@ Return a JSON object with these exact fields:
   "reasoning": "brief explanation of why this hotel is the best choice"
 }
 
-Use realistic hotel names and prices. MUST keep total price within $${hotelBudget}.`;
+Use realistic hotel names and prices in INR. MUST keep total price within ₹${hotelBudget}.`;
 
   const text = await callClaude(SYSTEM, prompt);
   const hotel = parseJSON<HotelOption>(text);

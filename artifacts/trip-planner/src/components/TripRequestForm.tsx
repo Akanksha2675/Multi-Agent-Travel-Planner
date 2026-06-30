@@ -15,7 +15,7 @@ const schema = z.object({
   destination: z.string().min(2, "Destination is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  budget: z.coerce.number().min(100, "Minimum budget is $100"),
+  budget: z.coerce.number().min(1000, "Minimum budget is ₹1,000"),
   travelers: z.coerce.number().min(1, "At least 1 traveler required"),
   preferences: z.string().optional()
 });
@@ -37,7 +37,7 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
       destination: "",
       startDate: "",
       endDate: "",
-      budget: 2000,
+      budget: 150000,
       travelers: 2,
       preferences: ""
     }
@@ -70,7 +70,7 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
                 </span>
                 <span className="flex items-center gap-1">
                   <Wallet className="h-4 w-4" />
-                  ${submittedData.budget}
+                  ₹{submittedData.budget.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -148,7 +148,7 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-700 font-medium">Total Budget ($)</FormLabel>
+                    <FormLabel className="text-slate-700 font-medium">Total Budget (₹)</FormLabel>
                     <FormControl>
                       <Input type="number" className="h-12" {...field} />
                     </FormControl>

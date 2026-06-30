@@ -41,7 +41,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
               </span>
             )}
           </div>
-          <span className="text-sm font-medium text-slate-700">${activity.estimatedCost}</span>
+          <span className="text-sm font-medium text-slate-700">₹{activity.estimatedCost.toLocaleString('en-IN')}</span>
         </div>
         
         {activity.description && (
@@ -86,7 +86,7 @@ export function ItineraryDayCard({ day, index }: Props) {
             <span className="text-sm font-medium text-slate-500">{displayDate}</span>
           </div>
           <div className="text-sm font-semibold text-slate-700">
-            Daily total: ${day.dailyCost}
+            Daily total: ₹{day.dailyCost.toLocaleString('en-IN')}
           </div>
         </div>
         <CardContent className="p-5">

@@ -27,21 +27,21 @@ export function BudgetProgressBar({ budget }: Props) {
           <div>
             <h3 className="font-medium text-slate-900">Budget Status</h3>
             <div className="text-2xl font-bold mt-1">
-              ${spent.toLocaleString(undefined, { maximumFractionDigits: 0 })} 
-              <span className="text-base font-normal text-slate-500"> / ${totalBudget.toLocaleString()}</span>
+              ₹{spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })} 
+              <span className="text-base font-normal text-slate-500"> / ₹{totalBudget.toLocaleString('en-IN')}</span>
             </div>
           </div>
           <div className="text-right">
             <span className={`font-medium ${isOverBudget ? 'text-red-500' : 'text-green-600'}`}>
-              {isOverBudget ? 'Over Budget' : `${remaining.toLocaleString()} remaining`}
+              {isOverBudget ? 'Over Budget' : `₹${remaining.toLocaleString('en-IN')} remaining`}
             </span>
           </div>
         </div>
 
         <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex mt-4">
-          {flights > 0 && <div className="h-full bg-blue-500" style={{ width: `${flightsPct}%` }} title={`Flights: $${flights}`} />}
-          {hotel > 0 && <div className="h-full bg-indigo-500" style={{ width: `${hotelPct}%` }} title={`Hotel: $${hotel}`} />}
-          {activities > 0 && <div className="h-full bg-teal-500" style={{ width: `${activitiesPct}%` }} title={`Activities: $${activities}`} />}
+          {flights > 0 && <div className="h-full bg-blue-500" style={{ width: `${flightsPct}%` }} title={`Flights: ₹${flights}`} />}
+          {hotel > 0 && <div className="h-full bg-indigo-500" style={{ width: `${hotelPct}%` }} title={`Hotel: ₹${hotel}`} />}
+          {activities > 0 && <div className="h-full bg-teal-500" style={{ width: `${activitiesPct}%` }} title={`Activities: ₹${activities}`} />}
           {isOverBudget && <div className="h-full bg-red-500 flex-1" />}
         </div>
         

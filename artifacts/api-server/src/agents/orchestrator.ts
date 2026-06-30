@@ -23,7 +23,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "orchestrator", {
       status: "working",
       currentTask: "Decomposing trip request and allocating budget",
-      lastMessage: `Planning trip to ${request.destination} for ${request.travelers} traveler(s), budget $${request.budget}`,
+      lastMessage: `Planning trip to ${request.destination} for ${request.travelers} traveler(s), budget ₹${request.budget}`,
     });
 
     await sleep(800);
@@ -32,7 +32,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
 
     broadcast(session, {
       type: "negotiation",
-      message: `Budget allocated: Flights $${allocation.flights} | Hotel $${allocation.hotel} | Activities $${allocation.activities} | Misc $${allocation.miscellaneous}`,
+      message: `Budget allocated: Flights ₹${allocation.flights} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities} | Misc ₹${allocation.miscellaneous}`,
       fromAgent: "Orchestrator",
       toAgent: "All Agents",
     });
@@ -40,7 +40,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "budget", {
       status: "working",
       currentTask: "Tracking budget allocation",
-      lastMessage: `Total $${request.budget} | Flights $${allocation.flights} | Hotel $${allocation.hotel} | Activities $${allocation.activities}`,
+      lastMessage: `Total ₹${request.budget} | Flights ₹${allocation.flights} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities}`,
     });
 
     await sleep(500);
@@ -86,18 +86,18 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
       updateAgent(session, "flights", {
         status: "approved",
         currentTask: null,
-        lastMessage: `Selected: ${flight.airline} — $${flight.price}`,
+        lastMessage: `Selected: ${flight.airline} — ₹${flight.price}`,
       });
       updateAgent(session, "budget", {
         status: "working",
         currentTask: "Flight approved, tracking spend",
-        lastMessage: `Flight approved: $${flight.price} of $${allocation.flights} allocated`,
+        lastMessage: `Flight approved: ₹${flight.price} of ₹${allocation.flights} allocated`,
       });
     } else {
       updateAgent(session, "flights", {
         status: "done",
         currentTask: null,
-        lastMessage: `Best found: ${flight.airline} — $${flight.price}`,
+        lastMessage: `Best found: ${flight.airline} — ₹${flight.price}`,
       });
     }
 
@@ -143,12 +143,12 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "hotels", {
       status: "approved",
       currentTask: null,
-      lastMessage: `Selected: ${hotel.name} — $${hotel.pricePerNight}/night`,
+      lastMessage: `Selected: ${hotel.name} — ₹${hotel.pricePerNight}/night`,
     });
     updateAgent(session, "budget", {
       status: "working",
       currentTask: "Hotel approved, tracking spend",
-      lastMessage: `Hotel approved: $${hotel.totalPrice} of $${allocation.hotel} allocated`,
+      lastMessage: `Hotel approved: ₹${hotel.totalPrice} of ₹${allocation.hotel} allocated`,
     });
 
     session.plan.hotel = hotel;
@@ -174,7 +174,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
       });
       broadcast(session, {
         type: "negotiation",
-        message: `Activities over budget by $${activitiesCheck.overage}. Scaling back.`,
+        message: `Activities over budget by ₹${activitiesCheck.overage}. Scaling back.`,
         fromAgent: "Budget Agent",
         toAgent: "Activities Agent",
       });
@@ -216,7 +216,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "budget", {
       status: "done",
       currentTask: null,
-      lastMessage: `Total spent: $${budgetBreakdown.spent} of $${budgetBreakdown.totalBudget} (${Math.round((budgetBreakdown.spent / budgetBreakdown.totalBudget) * 100)}% of budget)`,
+      lastMessage: `Total spent: ₹${budgetBreakdown.spent} of ₹${budgetBreakdown.totalBudget} (${Math.round((budgetBreakdown.spent / budgetBreakdown.totalBudget) * 100)}% of budget)`,
     });
 
     broadcast(session, { type: "trip_update", trip: { budget: budgetBreakdown } });
@@ -224,7 +224,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "orchestrator", {
       status: "done",
       currentTask: null,
-      lastMessage: `Trip plan complete. Total cost: $${budgetBreakdown.spent}`,
+      lastMessage: `Trip plan complete. Total cost: ₹${budgetBreakdown.spent}`,
     });
 
     // --- FINALIZE ---

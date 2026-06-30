@@ -26,8 +26,8 @@ export async function planActivities(
 
   const prompt = `Plan a ${days}-day itinerary for ${request.destination}:
 - Travelers: ${request.travelers}
-- Total activities budget: $${activitiesBudget}
-- Per person per day budget: ~$${dailyBudget}
+- Total activities budget: ₹${activitiesBudget} (currency: Indian Rupees INR)
+- Per person per day budget: ~₹${dailyBudget}
 - Preferences: ${request.preferences || "none"}
 - Dates: ${dateList.join(", ")}
 
