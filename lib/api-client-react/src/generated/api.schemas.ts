@@ -20,13 +20,15 @@ export interface TripRequest {
   startDate: string;
   /** Trip end date (YYYY-MM-DD) */
   endDate: string;
-  /** Total budget in USD */
+  /** Total budget in INR */
   budget: number;
   /**
      * Number of travelers
      * @minimum 1
      */
   travelers: number;
+  /** Departure city for flight search (e.g. Mumbai, Delhi) */
+  originCity?: string;
   /** Free-text travel preferences and interests */
   preferences?: string;
 }

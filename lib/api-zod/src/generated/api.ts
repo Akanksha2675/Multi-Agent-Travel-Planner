@@ -28,8 +28,9 @@ export const PlanTripBody = zod.object({
   "destination": zod.string().describe('Destination city and country'),
   "startDate": zod.coerce.date().describe('Trip start date (YYYY-MM-DD)'),
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
-  "budget": zod.number().describe('Total budget in USD'),
+  "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
+  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 })
 
@@ -44,8 +45,9 @@ export const PlanTripResponse = zod.object({
   "destination": zod.string().describe('Destination city and country'),
   "startDate": zod.coerce.date().describe('Trip start date (YYYY-MM-DD)'),
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
-  "budget": zod.number().describe('Total budget in USD'),
+  "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
+  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 }).optional()
 })
@@ -79,8 +81,9 @@ export const GetTripResponse = zod.object({
   "destination": zod.string().describe('Destination city and country'),
   "startDate": zod.coerce.date().describe('Trip start date (YYYY-MM-DD)'),
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
-  "budget": zod.number().describe('Total budget in USD'),
+  "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
+  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 }),
   "flight": zod.object({

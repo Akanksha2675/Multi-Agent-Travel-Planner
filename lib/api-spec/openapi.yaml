@@ -169,11 +169,14 @@ components:
           description: Trip end date (YYYY-MM-DD)
         budget:
           type: number
-          description: Total budget in USD
+          description: Total budget in INR
         travelers:
           type: integer
           minimum: 1
           description: Number of travelers
+        originCity:
+          type: string
+          description: Departure city for flight search (e.g. Mumbai, Delhi)
         preferences:
           type: string
           description: Free-text travel preferences and interests

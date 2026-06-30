@@ -15,7 +15,9 @@ export async function searchFlights(
       (1000 * 60 * 60 * 24)
   );
 
+  const origin = request.originCity || "Mumbai";
   const prompt = `Find the best flight for this trip:
+- Origin: ${origin}, India
 - Destination: ${request.destination}
 - Travel dates: ${request.startDate} to ${request.endDate} (${nights} nights)
 - Travelers: ${request.travelers}

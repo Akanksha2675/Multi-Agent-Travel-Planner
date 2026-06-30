@@ -66,6 +66,7 @@ export interface TripRequest {
   endDate: string;
   budget: number;
   travelers: number;
+  originCity?: string;
   preferences?: string;
 }
 

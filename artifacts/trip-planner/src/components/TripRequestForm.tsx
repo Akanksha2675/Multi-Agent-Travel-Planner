@@ -8,10 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TripRequest } from "@workspace/api-client-react";
-import { MapPin, Calendar as CalendarIcon, Wallet, Users, PlaneTakeoff } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, Wallet, Users, PlaneTakeoff, Navigation } from "lucide-react";
 import { format } from "date-fns";
 
+const INDIAN_CITIES = [
+  "Mumbai", "Delhi", "Bengaluru", "Chennai", "Kolkata",
+  "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Kochi"
+];
+
 const schema = z.object({
+  originCity: z.string().min(2, "Origin city is required"),
   destination: z.string().min(2, "Destination is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
@@ -34,6 +40,7 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      originCity: "Mumbai",
       destination: "",
       startDate: "",
       endDate: "",
@@ -56,6 +63,9 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Navigation className="h-5 w-5 text-primary" />
+                {submittedData.originCity || "Mumbai"}
+                <span className="text-slate-400 font-normal">→</span>
                 <MapPin className="h-5 w-5 text-primary" />
                 {submittedData.destination}
               </h3>
@@ -99,19 +109,44 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
       <CardContent className="px-8 pb-10">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="destination"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Destination</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Tokyo, Japan" className="h-12 text-lg" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <>
+              <datalist id="indian-cities">
+                {INDIAN_CITIES.map(c => <option key={c} value={c} />)}
+              </datalist>
+            </>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="originCity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-slate-700 font-medium">Flying From</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Mumbai"
+                        list="indian-cities"
+                        className="h-12 text-lg"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="destination"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-slate-700 font-medium">Destination</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Tokyo, Japan" className="h-12 text-lg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
