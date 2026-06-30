@@ -1,0 +1,85 @@
+Update the existing Multi-Agent Trip Logistics Coordinator project with the 
+following changes. Do not rebuild from scratch — modify the existing agent 
+structure, UI, and backend routes to incorporate these additions.
+
+## 1. REPLACE FLIGHTS AGENT WITH A TRANSPORT AGENT
+Remove the single-mode Flights Agent and replace it with a broader Transport 
+Agent that handles multiple transport options for getting to/around the 
+destination:
+- Flights — keep existing flight search logic (Amadeus or whichever API is 
+  already integrated)
+- Trains — add train search/options (use a relevant rail API if available 
+  for the target region, e.g., Amadeus also supports some rail data, or use 
+  a mock/estimated dataset if no free API is available for trains in scope)
+- Road/driving options — car rental or estimated road trip details (distance, 
+  estimated drive time, estimated fuel/toll cost — this can be calculated 
+  using Google Maps Directions API rather than a dedicated "road API")
+
+The Transport Agent should compare these options and recommend the best one 
+(or a couple of options) based on the user's stated preferences (cheapest, 
+fastest, most comfortable, etc.) and budget constraints. Update the 
+orchestrator's task delegation so it calls the Transport Agent instead of 
+the old Flights Agent, and update the conflict-resolution logic (Budget Agent 
+negotiation) to apply to whichever transport mode was chosen.
+
+Update the UI's agent activity feed and itinerary display to reflect 
+"Transport Agent" instead of "Flights Agent," and show which mode of 
+transport was selected and why (e.g., "Train recommended — 40% cheaper than 
+flight, only 1 hour longer").
+
+## 2. ADD A LOGIN PAGE
+Add a simple authentication flow:
+- A login/signup page as the entry point before the trip planner UI loads
+- Basic email + password fields (use a simple auth approach — Firebase Auth, 
+  or a basic Express + JWT setup with a local user store, whichever is 
+  faster to implement reliably)
+- After login, redirect to the existing trip planner interface
+- Include a simple "Logout" option visible somewhere in the main app UI 
+  (e.g., top-right corner)
+- Keep this lightweight — it's for demo/UX completeness, not enterprise-grade 
+  security. No need for password reset flows, email verification, or OAuth 
+  unless it's trivial to add.
+- Match the existing visual style (same color palette, typography, clean 
+  minimal design) so it doesn't look like a bolted-on afterthought
+
+## 3. ADD AN "EXECUTIONER AGENT" (DISPLAY-ONLY, NO REAL BOOKING)
+Add a fifth agent called the Executioner Agent that appears in the agent 
+activity feed after the itinerary is finalized and approved by the Budget 
+Agent. Its purpose is purely visual/demo — it should NOT make any real API 
+calls, bookings, or payments. It should:
+- Appear in the agent feed with a distinct icon/status (e.g., a checkmark or 
+  "finalizing" badge)
+- Show simulated status messages like "Booking flight... confirmed," 
+  "Reserving hotel... confirmed," "Finalizing itinerary... done" — each with 
+  a short artificial delay (1-2 seconds each) to look like real processing
+- End with a clear "Trip Booked!" or "Itinerary Finalized" confirmation 
+  state in the UI, with a visible disclaimer/badge stating something like 
+  "Demo mode — no real bookings were made" so it's transparent this isn't 
+  live (important for judging integrity, but can be styled subtly, not as 
+  a big warning)
+- This agent's "actions" should be hardcoded/simulated in the backend, not 
+  connected to any real payment or booking API
+
+## GENERAL
+Keep all existing functionality (RAG, Activities Agent, Hotel Agent, Budget 
+Agent, the visible negotiation feed) intact — these are additions, not 
+replacements, except for the Flights→Transport Agent swap specified above. 
+Maintain the existing visual style and component structure (Tailwind, 
+modular components) rather than introducing a different design pattern.
+
+## EXECUTIONER AGENT — USER CONFIRMATION
+The Executioner Agent should NOT trigger automatically once the itinerary is 
+finalized. Instead:
+- Once the Budget Agent approves the final itinerary, show a clear "Book This 
+  Trip" button in the UI (not auto-triggered)
+- Only when the user clicks this button does the Executioner Agent begin its 
+  simulated booking sequence (status messages with artificial delay, as 
+  described above)
+- While the Executioner Agent is "working," disable the button and show a 
+  loading/processing state
+- On completion, show the "Trip Booked!" confirmation with the "Demo mode — 
+  no real bookings were made" disclaimer
+- This makes the booking step feel like a deliberate, user-initiated action 
+  rather than something that happens automatically, which is both more 
+  realistic (no real app books things without explicit confirmation) and 
+  more honest about what's a simulation

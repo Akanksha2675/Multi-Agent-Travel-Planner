@@ -1,11 +1,11 @@
 import { SessionState, TripPlan } from "./types.js";
 import { broadcast, updateAgent } from "./session-store.js";
-import { searchFlights } from "./flights-agent.js";
+import { searchTransport } from "./transport-agent.js";
 import { searchHotels } from "./hotels-agent.js";
 import { planActivities } from "./activities-agent.js";
 import {
   allocateBudget,
-  checkFlightBudget,
+  checkTransportBudget,
   checkHotelBudget,
   checkActivitiesBudget,
   computeSpend,
@@ -32,7 +32,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
 
     broadcast(session, {
       type: "negotiation",
-      message: `Budget allocated: Flights ₹${allocation.flights} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities} | Misc ₹${allocation.miscellaneous}`,
+      message: `Budget allocated: Transport ₹${allocation.transport} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities} | Misc ₹${allocation.miscellaneous}`,
       fromAgent: "Orchestrator",
       toAgent: "All Agents",
     });
@@ -40,69 +40,69 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     updateAgent(session, "budget", {
       status: "working",
       currentTask: "Tracking budget allocation",
-      lastMessage: `Total ₹${request.budget} | Flights ₹${allocation.flights} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities}`,
+      lastMessage: `Total ₹${request.budget} | Transport ₹${allocation.transport} | Hotel ₹${allocation.hotel} | Activities ₹${allocation.activities}`,
     });
 
     await sleep(500);
 
-    // --- FLIGHTS ---
-    updateAgent(session, "flights", {
+    // --- TRANSPORT ---
+    updateAgent(session, "transport", {
       status: "working",
-      currentTask: `Searching flights to ${request.destination}`,
-      lastMessage: "Querying flight options...",
+      currentTask: `Comparing transport options to ${request.destination}`,
+      lastMessage: "Analysing flights, trains & road options...",
     });
 
-    let flight = await searchFlights(request, allocation.flights);
+    let transport = await searchTransport(request, allocation.transport);
 
-    let flightCheck = checkFlightBudget(flight, allocation);
-    if (!flightCheck.approved) {
+    let transportCheck = checkTransportBudget(transport, allocation);
+    if (!transportCheck.approved) {
       updateAgent(session, "budget", {
         status: "rejected",
-        currentTask: "Rejecting flight — over budget",
-        lastMessage: flightCheck.reason ?? null,
+        currentTask: "Rejecting transport — over budget",
+        lastMessage: transportCheck.reason ?? null,
       });
       broadcast(session, {
         type: "negotiation",
-        message: `Rejected flight: ${flightCheck.reason}. Requesting cheaper alternative.`,
+        message: `Rejected transport: ${transportCheck.reason}. Requesting cheaper alternative.`,
         fromAgent: "Budget Agent",
-        toAgent: "Flights Agent",
+        toAgent: "Transport Agent",
       });
 
-      updateAgent(session, "flights", {
+      updateAgent(session, "transport", {
         status: "retrying",
         currentTask: "Retrying with tighter budget constraint",
-        lastMessage: flightCheck.adjustment ?? null,
+        lastMessage: transportCheck.adjustment ?? null,
       });
 
       await sleep(1200);
-      flight = await searchFlights(
-        { ...request, budget: allocation.flights * 0.9 },
-        allocation.flights
+      transport = await searchTransport(
+        { ...request, budget: allocation.transport * 0.9 },
+        allocation.transport
       );
-      flightCheck = checkFlightBudget(flight, allocation);
+      transportCheck = checkTransportBudget(transport, allocation);
     }
 
-    if (flightCheck.approved || (flightCheck.overage ?? 0) < allocation.flights * 0.1) {
-      updateAgent(session, "flights", {
+    if (transportCheck.approved || (transportCheck.overage ?? 0) < allocation.transport * 0.1) {
+      updateAgent(session, "transport", {
         status: "approved",
         currentTask: null,
-        lastMessage: `Selected: ${flight.airline} — ₹${flight.price}`,
+        lastMessage: `Selected: ${transport.provider} (${transport.mode}) — ₹${transport.price}`,
       });
       updateAgent(session, "budget", {
         status: "working",
-        currentTask: "Flight approved, tracking spend",
-        lastMessage: `Flight approved: ₹${flight.price} of ₹${allocation.flights} allocated`,
+        currentTask: "Transport approved, tracking spend",
+        lastMessage: `Transport approved: ₹${transport.price} of ₹${allocation.transport} allocated`,
       });
     } else {
-      updateAgent(session, "flights", {
+      updateAgent(session, "transport", {
         status: "done",
         currentTask: null,
-        lastMessage: `Best found: ${flight.airline} — ₹${flight.price}`,
+        lastMessage: `Best found: ${transport.provider} (${transport.mode}) — ₹${transport.price}`,
       });
     }
 
-    session.plan.flight = flight;
-    broadcast(session, { type: "trip_update", trip: { flight } });
+    session.plan.transport = transport;
+    broadcast(session, { type: "trip_update", trip: { transport } });
 
     await sleep(600);
 
@@ -204,7 +204,7 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
     // --- FINAL BUDGET ---
     const activitiesTotal = days.reduce((s, d) => s + d.dailyCost, 0);
     const budgetBreakdown = computeSpend(
-      flight.price,
+      transport.price,
       hotel.totalPrice,
       activitiesTotal,
       allocation.miscellaneous,
@@ -227,22 +227,31 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
       lastMessage: `Trip plan complete. Total cost: ₹${budgetBreakdown.spent}`,
     });
 
+    // Executioner stays idle until user triggers booking
+    updateAgent(session, "executioner", {
+      status: "idle",
+      currentTask: null,
+      lastMessage: "Awaiting your confirmation to book...",
+    });
+
     // --- FINALIZE ---
     const completedAt = new Date().toISOString();
     session.status = "completed";
     session.completedAt = completedAt;
+    session.plan.bookingStatus = "idle";
 
     const finalPlan: TripPlan = {
       sessionId: session.sessionId,
       status: "completed",
       request,
-      flight,
+      transport,
       hotel,
       days,
       budget: budgetBreakdown,
       agents: Array.from(session.agents.values()),
       createdAt: session.createdAt,
       completedAt,
+      bookingStatus: "idle",
     };
 
     session.plan = finalPlan;
@@ -265,4 +274,51 @@ export async function runOrchestrator(session: SessionState): Promise<void> {
       message: err instanceof Error ? err.message : "Trip planning failed",
     });
   }
+}
+
+export async function runExecutioner(session: SessionState): Promise<void> {
+  const plan = session.plan as TripPlan;
+
+  session.plan.bookingStatus = "booking";
+  broadcast(session, { type: "trip_update", trip: { bookingStatus: "booking" } });
+
+  updateAgent(session, "executioner", {
+    status: "working",
+    currentTask: "Initiating booking sequence",
+    lastMessage: "Starting simulated booking...",
+  });
+
+  const steps = [
+    { step: "Reserving transport with " + (plan.transport?.provider ?? "carrier") + "...", delay: 1800 },
+    { step: "Transport confirmed ✓", delay: 1200 },
+    { step: "Booking room at " + (plan.hotel?.name ?? "hotel") + "...", delay: 2000 },
+    { step: "Hotel reservation confirmed ✓", delay: 1200 },
+    { step: "Locking in activity slots...", delay: 1600 },
+    { step: "Activities confirmed ✓", delay: 1000 },
+    { step: "Generating itinerary document...", delay: 1400 },
+  ];
+
+  for (const { step, delay } of steps) {
+    await new Promise((r) => setTimeout(r, delay));
+    updateAgent(session, "executioner", {
+      status: "working",
+      currentTask: step,
+      lastMessage: step,
+    });
+    broadcast(session, { type: "booking_update", step, done: false });
+  }
+
+  await new Promise((r) => setTimeout(r, 1000));
+
+  updateAgent(session, "executioner", {
+    status: "done",
+    currentTask: null,
+    lastMessage: "Trip booked! (Demo mode — no real bookings made)",
+  });
+
+  session.plan.bookingStatus = "booked";
+  session.status = "booked";
+
+  broadcast(session, { type: "booking_update", step: "Trip booked!", done: true });
+  broadcast(session, { type: "trip_update", trip: { bookingStatus: "booked", status: "booked" } });
 }

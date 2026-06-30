@@ -1,7 +1,7 @@
-import { TripRequest, FlightOption, HotelOption, ItineraryDay } from "./types.js";
+import { TripRequest, TransportOption, HotelOption, ItineraryDay } from "./types.js";
 
 export interface BudgetAllocation {
-  flights: number;
+  transport: number;
   hotel: number;
   activities: number;
   miscellaneous: number;
@@ -16,28 +16,22 @@ export interface BudgetCheck {
 
 export function allocateBudget(request: TripRequest): BudgetAllocation {
   const { budget } = request;
-  const nights = Math.round(
-    (new Date(request.endDate).getTime() - new Date(request.startDate).getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
-
   const misc = Math.floor(budget * 0.05);
-  const flights = Math.floor(budget * 0.30);
+  const transport = Math.floor(budget * 0.30);
   const hotel = Math.floor(budget * 0.35);
-  const activities = budget - flights - hotel - misc;
-
-  return { flights, hotel, activities, miscellaneous: misc };
+  const activities = budget - transport - hotel - misc;
+  return { transport, hotel, activities, miscellaneous: misc };
 }
 
-export function checkFlightBudget(flight: FlightOption, allocation: BudgetAllocation): BudgetCheck {
-  if (flight.price <= allocation.flights) {
+export function checkTransportBudget(transport: TransportOption, allocation: BudgetAllocation): BudgetCheck {
+  if (transport.price <= allocation.transport) {
     return { approved: true };
   }
-  const overage = flight.price - allocation.flights;
+  const overage = transport.price - allocation.transport;
   return {
     approved: false,
-    reason: `Flight cost ₹${flight.price} exceeds flight budget of ₹${allocation.flights} by ₹${overage}`,
-    adjustment: `Find a flight costing at most ₹${allocation.flights} total`,
+    reason: `Transport cost ₹${transport.price} exceeds transport budget of ₹${allocation.transport} by ₹${overage}`,
+    adjustment: `Find a transport option costing at most ₹${allocation.transport} total`,
     overage,
   };
 }
@@ -75,18 +69,18 @@ export function checkActivitiesBudget(
 }
 
 export function computeSpend(
-  flightCost: number,
+  transportCost: number,
   hotelCost: number,
   activitiesCost: number,
   miscCost: number,
   totalBudget: number
 ) {
-  const spent = flightCost + hotelCost + activitiesCost + miscCost;
+  const spent = transportCost + hotelCost + activitiesCost + miscCost;
   return {
     totalBudget,
     spent,
     remaining: totalBudget - spent,
-    flights: flightCost,
+    transport: transportCost,
     hotel: hotelCost,
     activities: activitiesCost,
     miscellaneous: miscCost,

@@ -1,13 +1,25 @@
 import { Router } from "express";
 import { createSession, getSession, updateAgent } from "../agents/session-store.js";
-import { runOrchestrator } from "../agents/orchestrator.js";
+import { runOrchestrator, runExecutioner } from "../agents/orchestrator.js";
 import { PlanTripBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger.js";
+import { getUserFromHeader } from "../lib/auth.js";
 
 const router = Router();
 
+// Auth middleware — requires valid JWT
+function requireAuth(req: any, res: any, next: any) {
+  const user = getUserFromHeader(req.headers.authorization);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized — please log in" });
+    return;
+  }
+  req.user = user;
+  next();
+}
+
 // POST /api/plan-trip — kick off agent flow
-router.post("/plan-trip", async (req, res) => {
+router.post("/plan-trip", requireAuth, async (req, res) => {
   const parsed = PlanTripBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -21,7 +33,6 @@ router.post("/plan-trip", async (req, res) => {
     endDate: data.endDate instanceof Date ? data.endDate.toISOString().split("T")[0] : String(data.endDate),
   });
 
-  // Fire and forget — orchestrator runs async
   runOrchestrator(session).catch((err) => {
     logger.error({ err, sessionId: session.sessionId }, "Orchestrator error");
   });
@@ -52,7 +63,6 @@ router.get("/trip-stream/:sessionId", (req, res) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
-  // Send initial state
   send({
     type: "trip_update",
     trip: {
@@ -64,14 +74,12 @@ router.get("/trip-stream/:sessionId", (req, res) => {
   const client = (event: object) => send(event);
   session.sseClients.add(client as any);
 
-  // If already completed, send complete immediately
-  if (session.status === "completed" || session.status === "failed") {
+  if (session.status === "completed" || session.status === "failed" || session.status === "booked") {
     send({ type: "complete", trip: session.plan });
     res.end();
     return;
   }
 
-  // Heartbeat
   const heartbeat = setInterval(() => {
     res.write(": ping\n\n");
   }, 15000);
@@ -113,8 +121,26 @@ router.get("/trips/:sessionId/agents", (req, res) => {
     res.status(404).json({ error: "Session not found" });
     return;
   }
-
   res.json(Array.from(session.agents.values()));
+});
+
+// POST /api/trips/:sessionId/execute — trigger Executioner Agent
+router.post("/trips/:sessionId/execute", requireAuth, async (req, res) => {
+  const session = getSession(req.params.sessionId);
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+  if (session.status !== "completed") {
+    res.status(400).json({ error: "Trip must be completed before booking" });
+    return;
+  }
+
+  res.json({ ok: true, message: "Executioner started" });
+
+  runExecutioner(session).catch((err) => {
+    logger.error({ err, sessionId: session.sessionId }, "Executioner error");
+  });
 });
 
 export default router;

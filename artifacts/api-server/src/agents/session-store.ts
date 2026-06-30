@@ -5,10 +5,11 @@ const sessions = new Map<string, SessionState>();
 
 const AGENT_DEFS = [
   { agentId: "orchestrator", name: "Orchestrator" },
-  { agentId: "flights", name: "Flights Agent" },
+  { agentId: "transport", name: "Transport Agent" },
   { agentId: "hotels", name: "Hotels Agent" },
   { agentId: "activities", name: "Activities Agent" },
   { agentId: "budget", name: "Budget Agent" },
+  { agentId: "executioner", name: "Executioner Agent" },
 ];
 
 export function createSession(request: TripRequest): SessionState {
@@ -40,7 +41,7 @@ export function createSession(request: TripRequest): SessionState {
         totalBudget: request.budget,
         spent: 0,
         remaining: request.budget,
-        flights: 0,
+        transport: 0,
         hotel: 0,
         activities: 0,
         miscellaneous: 0,
@@ -48,6 +49,7 @@ export function createSession(request: TripRequest): SessionState {
       agents: [],
       createdAt: now,
       completedAt: null,
+      bookingStatus: "idle",
     },
     agents,
     createdAt: now,
