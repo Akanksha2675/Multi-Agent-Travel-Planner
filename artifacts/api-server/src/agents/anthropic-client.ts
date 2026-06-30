@@ -1,36 +1,37 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("ANTHROPIC_API_KEY must be set.");
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY must be set.");
 }
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export const MODEL = "claude-haiku-4-5";
+export const MODEL = "gemini-2.5-flash";
 
 export async function callClaude(
   systemPrompt: string,
   userPrompt: string,
-  maxTokens = 8192
+  _maxTokens = 8192
 ): Promise<string> {
-  const response = await anthropic.messages.create({
+  const response = await genai.models.generateContent({
     model: MODEL,
-    max_tokens: maxTokens,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
+    contents: userPrompt,
+    config: {
+      systemInstruction: systemPrompt,
+    },
   });
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text response from Claude");
+  const text = response.text;
+  if (!text) {
+    throw new Error("No text response from Gemini");
   }
-  return textBlock.text;
+  return text;
 }
 
 export function parseJSON<T>(text: string): T {
-  const match = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  const match =
+    text.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+    text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
   const jsonStr = match ? match[1].trim() : text.trim();
   return JSON.parse(jsonStr) as T;
 }
