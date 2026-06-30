@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Multi-Agent Trip Logistics Coordinator API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: trips
+    description: Trip planning operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,109 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /plan-trip:
+    post:
+      operationId: planTrip
+      tags: [trips]
+      summary: Start a multi-agent trip planning session
+      description: Kicks off the multi-agent orchestration flow and returns a session ID for streaming updates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripRequest"
+      responses:
+        "202":
+          description: Trip planning started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripSession"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /trip-stream/{sessionId}:
+    get:
+      operationId: streamTripUpdates
+      tags: [trips]
+      summary: Stream live agent updates via SSE
+      description: Server-Sent Events endpoint that streams real-time agent activity, negotiation, and itinerary progress
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream of agent events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "404":
+          description: Session not found
+
+  /trips/{sessionId}:
+    get:
+      operationId: getTrip
+      tags: [trips]
+      summary: Get the completed trip plan
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Completed trip plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPlan"
+        "202":
+          description: Still planning
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripSession"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /trips/{sessionId}/agents:
+    get:
+      operationId: getAgentStatuses
+      tags: [trips]
+      summary: Get current status of all agents for a session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of agent statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentStatus"
+        "404":
+          description: Session not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +139,246 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    TripRequest:
+      type: object
+      required:
+        - destination
+        - startDate
+        - endDate
+        - budget
+        - travelers
+      properties:
+        destination:
+          type: string
+          description: Destination city and country
+        startDate:
+          type: string
+          format: date
+          description: Trip start date (YYYY-MM-DD)
+        endDate:
+          type: string
+          format: date
+          description: Trip end date (YYYY-MM-DD)
+        budget:
+          type: number
+          description: Total budget in USD
+        travelers:
+          type: integer
+          minimum: 1
+          description: Number of travelers
+        preferences:
+          type: string
+          description: Free-text travel preferences and interests
+
+    TripSession:
+      type: object
+      required:
+        - sessionId
+        - status
+        - createdAt
+      properties:
+        sessionId:
+          type: string
+        status:
+          type: string
+          enum: [planning, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        request:
+          $ref: "#/components/schemas/TripRequest"
+
+    AgentStatus:
+      type: object
+      required:
+        - agentId
+        - name
+        - status
+      properties:
+        agentId:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [idle, working, approved, rejected, retrying, done]
+        currentTask:
+          type: ["string", "null"]
+        lastMessage:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+          format: date-time
+
+    FlightOption:
+      type: object
+      required:
+        - id
+        - airline
+        - departure
+        - arrival
+        - price
+        - duration
+      properties:
+        id:
+          type: string
+        airline:
+          type: string
+        departure:
+          type: string
+        arrival:
+          type: string
+        price:
+          type: number
+        duration:
+          type: string
+        stops:
+          type: integer
+        reasoning:
+          type: ["string", "null"]
+
+    HotelOption:
+      type: object
+      required:
+        - id
+        - name
+        - location
+        - pricePerNight
+        - rating
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        pricePerNight:
+          type: number
+        totalPrice:
+          type: number
+        rating:
+          type: number
+        amenities:
+          type: array
+          items:
+            type: string
+        reasoning:
+          type: ["string", "null"]
+
+    Activity:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - estimatedCost
+        - duration
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        estimatedCost:
+          type: number
+        duration:
+          type: string
+        description:
+          type: ["string", "null"]
+        timeSlot:
+          type: ["string", "null"]
+        reasoning:
+          type: ["string", "null"]
+
+    ItineraryDay:
+      type: object
+      required:
+        - day
+        - date
+        - activities
+        - dailyCost
+      properties:
+        day:
+          type: integer
+        date:
+          type: string
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Activity"
+        dailyCost:
+          type: number
+        notes:
+          type: ["string", "null"]
+
+    BudgetBreakdown:
+      type: object
+      required:
+        - totalBudget
+        - spent
+        - remaining
+        - flights
+        - hotel
+        - activities
+        - miscellaneous
+      properties:
+        totalBudget:
+          type: number
+        spent:
+          type: number
+        remaining:
+          type: number
+        flights:
+          type: number
+        hotel:
+          type: number
+        activities:
+          type: number
+        miscellaneous:
+          type: number
+
+    TripPlan:
+      type: object
+      required:
+        - sessionId
+        - status
+        - request
+        - budget
+        - days
+        - createdAt
+      properties:
+        sessionId:
+          type: string
+        status:
+          type: string
+          enum: [planning, completed, failed]
+        request:
+          $ref: "#/components/schemas/TripRequest"
+        flight:
+          $ref: "#/components/schemas/FlightOption"
+        hotel:
+          $ref: "#/components/schemas/HotelOption"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        budget:
+          $ref: "#/components/schemas/BudgetBreakdown"
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentStatus"
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
