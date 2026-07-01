@@ -20,7 +20,7 @@ export interface TripRequest {
      * @minimum 1
      */
   travelers: number;
-  /** Departure city for flight search (e.g. Mumbai, Delhi) */
+  /** Departure city for transport search (e.g. Mumbai, Delhi) */
   originCity?: string;
   /** Free-text travel preferences and interests */
   preferences?: string;

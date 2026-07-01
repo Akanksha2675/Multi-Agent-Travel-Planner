@@ -10,7 +10,7 @@ export interface BudgetBreakdown {
   totalBudget: number;
   spent: number;
   remaining: number;
-  flights: number;
+  transport: number;
   hotel: number;
   activities: number;
   miscellaneous: number;

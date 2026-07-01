@@ -6,12 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type TripPlanStatus = typeof TripPlanStatus[keyof typeof TripPlanStatus];
+export type TripPlanBookingStatus = typeof TripPlanBookingStatus[keyof typeof TripPlanBookingStatus];
 
 
-export const TripPlanStatus = {
-  planning: 'planning',
-  completed: 'completed',
-  failed: 'failed',
+export const TripPlanBookingStatus = {
+  idle: 'idle',
+  booking: 'booking',
   booked: 'booked',
 } as const;

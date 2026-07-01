@@ -13,4 +13,5 @@ export const TripSessionStatus = {
   planning: 'planning',
   completed: 'completed',
   failed: 'failed',
+  booked: 'booked',
 } as const;

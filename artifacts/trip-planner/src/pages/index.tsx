@@ -1,17 +1,25 @@
-import { useState, useEffect } from "react";
-import { usePlanTrip, useGetTrip, useGetAgentStatuses, TripRequest, TripPlan, AgentStatus } from "@workspace/api-client-react";
+import { useState } from "react";
+import { usePlanTrip, TripRequest, TripPlan } from "@workspace/api-client-react";
 import { TripRequestForm } from "@/components/TripRequestForm";
 import { AgentActivityFeed } from "@/components/AgentActivityFeed";
 import { BudgetProgressBar } from "@/components/BudgetProgressBar";
 import { ItineraryDayCard } from "@/components/ItineraryDayCard";
-import { FlightCard } from "@/components/FlightCard";
+import { TransportCard } from "@/components/TransportCard";
 import { HotelCard } from "@/components/HotelCard";
+import { ExecutionerPanel } from "@/components/ExecutionerPanel";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { AuthUser } from "@/hooks/use-auth";
 
-export default function Home() {
+interface Props {
+  user: AuthUser | null;
+  onLogout: () => void;
+}
+
+export default function Home({ user, onLogout }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -20,41 +28,31 @@ export default function Home() {
       onSuccess: (data) => {
         setSessionId(data.sessionId);
       },
-      onError: (error) => {
+      onError: (error: any) => {
         toast({
           title: "Failed to start planning",
-          description: error.error || "An unexpected error occurred",
-          variant: "destructive"
+          description: error?.data?.error || "An unexpected error occurred",
+          variant: "destructive",
         });
-      }
-    }
+      },
+    },
   });
 
   const handleFormSubmit = (data: TripRequest) => {
     planTripMutation.mutate({ data });
   };
 
-  // SSE Stream
-  const { agents: streamAgents, trip: streamTrip, logs, isConnected } = useAgentStream(sessionId);
+  const { agents: streamAgents, trip: streamTrip, logs, isConnected, bookingSteps } =
+    useAgentStream(sessionId);
 
-  // Fallback Polling
-  const { data: polledTrip } = useGetTrip(sessionId || "", {
-    query: {
-      enabled: !!sessionId && (!isConnected || (streamTrip && streamTrip.status !== "completed")),
-      refetchInterval: 3000,
-    }
-  });
+  const currentTrip = (
+    Object.keys(streamTrip).length > 0 ? streamTrip : {}
+  ) as Partial<TripPlan>;
 
-  const { data: polledAgents } = useGetAgentStatuses(sessionId || "", {
-    query: {
-      enabled: !!sessionId && !isConnected,
-      refetchInterval: 3000,
-    }
-  });
+  const currentAgents = streamAgents;
 
-  // Merge Stream and Polling data, preferring Stream
-  const currentTrip = (Object.keys(streamTrip).length > 0 ? streamTrip : polledTrip) as Partial<TripPlan>;
-  const currentAgents = (streamAgents.length > 0 ? streamAgents : polledAgents) || [];
+  const isCompleted = currentTrip?.status === "completed" || currentTrip?.status === "booked";
+  const bookingStatus = (currentTrip?.bookingStatus as "idle" | "booking" | "booked") ?? "idle";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -66,14 +64,35 @@ export default function Home() {
             </div>
             <h1 className="font-bold tracking-tight text-lg">Logistics Agent</h1>
           </div>
+
           <div className="flex items-center gap-3">
             {sessionId && (
               <div className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
                 <span className="relative flex h-2 w-2">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-green-400' : 'bg-amber-400'}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? "bg-green-400" : "bg-amber-400"}`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? "bg-green-500" : "bg-amber-500"}`}
+                  />
                 </span>
-                {isConnected ? 'Stream Active' : 'Polling'}
+                {isConnected ? "Stream Active" : "Polling"}
+              </div>
+            )}
+            {user && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm text-slate-300 hidden sm:flex">
+                  <User className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="font-medium">{user.name}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 h-8 px-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
@@ -81,17 +100,16 @@ export default function Home() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        
         {/* Left Column: Form & Itinerary */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <TripRequestForm 
-            onSubmit={handleFormSubmit} 
-            isSubmitting={planTripMutation.isPending} 
+          <TripRequestForm
+            onSubmit={handleFormSubmit}
+            isSubmitting={planTripMutation.isPending}
           />
 
           {sessionId && (
             <AnimatePresence>
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
@@ -100,16 +118,20 @@ export default function Home() {
                   <BudgetProgressBar budget={currentTrip.budget} />
                 )}
 
-                {(currentTrip?.flight || currentTrip?.hotel) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentTrip.flight && <FlightCard flight={currentTrip.flight} />}
-                    {currentTrip.hotel && <HotelCard hotel={currentTrip.hotel} />}
+                {(currentTrip?.transport || currentTrip?.hotel) && (
+                  <div>
+                    {currentTrip.transport && (
+                      <TransportCard transport={currentTrip.transport} />
+                    )}
+                    {currentTrip.hotel && (
+                      <HotelCard hotel={currentTrip.hotel} />
+                    )}
                   </div>
                 )}
 
                 {currentTrip?.days && currentTrip.days.length > 0 ? (
                   <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-slate-900 mt-8 mb-4">Itinerary</h2>
+                    <h2 className="text-xl font-bold text-slate-900 mt-2 mb-4">Itinerary</h2>
                     {currentTrip.days.map((day, index) => (
                       <ItineraryDayCard key={day.day} day={day} index={index} />
                     ))}
@@ -123,11 +145,25 @@ export default function Home() {
                   )
                 )}
 
-                {currentTrip?.status === "completed" && (
-                  <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center mt-8">
-                    <h3 className="text-lg font-bold text-green-900 mb-2">Trip Planning Complete!</h3>
-                    <p className="text-green-800 text-sm">All agents have successfully negotiated and finalized your itinerary within budget.</p>
-                  </div>
+                {isCompleted && (
+                  <>
+                    <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+                      <h3 className="text-lg font-bold text-green-900 mb-2">
+                        {bookingStatus === "booked" ? "Trip Booked!" : "Trip Planning Complete!"}
+                      </h3>
+                      <p className="text-green-800 text-sm">
+                        {bookingStatus === "booked"
+                          ? "All bookings confirmed by the Executioner Agent."
+                          : "All agents have successfully negotiated and finalized your itinerary within budget."}
+                      </p>
+                    </div>
+
+                    <ExecutionerPanel
+                      sessionId={sessionId}
+                      bookingStatus={bookingStatus}
+                      bookingSteps={bookingSteps}
+                    />
+                  </>
                 )}
               </motion.div>
             </AnimatePresence>

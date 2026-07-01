@@ -13,6 +13,28 @@ export interface ApiError {
   error: string;
 }
 
+export interface AuthRequest {
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  name?: string;
+}
+
+export type UserProfileUser = {
+  id: string;
+  email: string;
+  name: string;
+};
+
+export interface UserProfile {
+  user: UserProfileUser;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: UserProfile;
+}
+
 export interface TripRequest {
   /** Destination city and country */
   destination: string;
@@ -27,7 +49,7 @@ export interface TripRequest {
      * @minimum 1
      */
   travelers: number;
-  /** Departure city for flight search (e.g. Mumbai, Delhi) */
+  /** Departure city for transport search (e.g. Mumbai, Delhi) */
   originCity?: string;
   /** Free-text travel preferences and interests */
   preferences?: string;
@@ -40,6 +62,7 @@ export const TripSessionStatus = {
   planning: 'planning',
   completed: 'completed',
   failed: 'failed',
+  booked: 'booked',
 } as const;
 
 export interface TripSession {
@@ -72,14 +95,44 @@ export interface AgentStatus {
   updatedAt?: string;
 }
 
-export interface FlightOption {
+export type TransportModeOptionMode = typeof TransportModeOptionMode[keyof typeof TransportModeOptionMode];
+
+
+export const TransportModeOptionMode = {
+  flight: 'flight',
+  train: 'train',
+  road: 'road',
+} as const;
+
+export interface TransportModeOption {
+  mode: TransportModeOptionMode;
+  /** @nullable */
+  price?: number | null;
+  duration: string;
+  summary: string;
+}
+
+export type TransportOptionMode = typeof TransportOptionMode[keyof typeof TransportOptionMode];
+
+
+export const TransportOptionMode = {
+  flight: 'flight',
+  train: 'train',
+  road: 'road',
+} as const;
+
+export interface TransportOption {
   id: string;
-  airline: string;
+  mode: TransportOptionMode;
+  provider: string;
   departure: string;
   arrival: string;
   price: number;
   duration: string;
   stops?: number;
+  /** @nullable */
+  comparison?: string | null;
+  allOptions?: TransportModeOption[];
   /** @nullable */
   reasoning?: string | null;
 }
@@ -123,7 +176,7 @@ export interface BudgetBreakdown {
   totalBudget: number;
   spent: number;
   remaining: number;
-  flights: number;
+  transport: number;
   hotel: number;
   activities: number;
   miscellaneous: number;
@@ -136,19 +189,39 @@ export const TripPlanStatus = {
   planning: 'planning',
   completed: 'completed',
   failed: 'failed',
+  booked: 'booked',
+} as const;
+
+export type TripPlanBookingStatus = typeof TripPlanBookingStatus[keyof typeof TripPlanBookingStatus];
+
+
+export const TripPlanBookingStatus = {
+  idle: 'idle',
+  booking: 'booking',
+  booked: 'booked',
 } as const;
 
 export interface TripPlan {
   sessionId: string;
   status: TripPlanStatus;
   request: TripRequest;
-  flight?: FlightOption;
+  transport?: TransportOption;
   hotel?: HotelOption;
   days: ItineraryDay[];
   budget: BudgetBreakdown;
   agents?: AgentStatus[];
+  bookingStatus?: TripPlanBookingStatus;
   createdAt: string;
   /** @nullable */
   completedAt?: string | null;
 }
+
+export type AuthLogout200 = {
+  ok?: boolean;
+};
+
+export type ExecuteTrip200 = {
+  ok?: boolean;
+  message?: string;
+};
 

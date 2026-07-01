@@ -5,15 +5,21 @@
  * Multi-Agent Trip Logistics Coordinator API
  * OpenAPI spec version: 0.1.0
  */
+import type { TransportModeOption } from './transportModeOption';
+import type { TransportOptionMode } from './transportOptionMode';
 
-export interface FlightOption {
+export interface TransportOption {
   id: string;
-  airline: string;
+  mode: TransportOptionMode;
+  provider: string;
   departure: string;
   arrival: string;
   price: number;
   duration: string;
   stops?: number;
+  /** @nullable */
+  comparison?: string | null;
+  allOptions?: TransportModeOption[];
   /** @nullable */
   reasoning?: string | null;
 }

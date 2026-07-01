@@ -7,9 +7,10 @@
  */
 import type { AgentStatus } from './agentStatus';
 import type { BudgetBreakdown } from './budgetBreakdown';
-import type { FlightOption } from './flightOption';
 import type { HotelOption } from './hotelOption';
 import type { ItineraryDay } from './itineraryDay';
+import type { TransportOption } from './transportOption';
+import type { TripPlanBookingStatus } from './tripPlanBookingStatus';
 import type { TripPlanStatus } from './tripPlanStatus';
 import type { TripRequest } from './tripRequest';
 
@@ -17,11 +18,12 @@ export interface TripPlan {
   sessionId: string;
   status: TripPlanStatus;
   request: TripRequest;
-  flight?: FlightOption;
+  transport?: TransportOption;
   hotel?: HotelOption;
   days: ItineraryDay[];
   budget: BudgetBreakdown;
   agents?: AgentStatus[];
+  bookingStatus?: TripPlanBookingStatus;
   createdAt: Date;
   /** @nullable */
   completedAt?: string | null;

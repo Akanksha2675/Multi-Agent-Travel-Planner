@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -18,7 +17,76 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Kicks off the multi-agent orchestration flow and returns a session ID for streaming updates
+ * @summary Register a new user
+ */
+export const authRegisterBodyPasswordMin = 6;
+
+
+
+export const AuthRegisterBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string().min(authRegisterBodyPasswordMin),
+  "name": zod.string().optional()
+})
+
+export const AuthRegisterResponse = zod.object({
+  "token": zod.string(),
+  "user": zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string()
+})
+})
+})
+
+
+/**
+ * @summary Login with email and password
+ */
+export const authLoginBodyPasswordMin = 6;
+
+
+
+export const AuthLoginBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string().min(authLoginBodyPasswordMin),
+  "name": zod.string().optional()
+})
+
+export const AuthLoginResponse = zod.object({
+  "token": zod.string(),
+  "user": zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string()
+})
+})
+})
+
+
+/**
+ * @summary Get current user
+ */
+export const AuthMeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string()
+})
+})
+
+
+/**
+ * @summary Logout (client-side token removal)
+ */
+export const AuthLogoutResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
  * @summary Start a multi-agent trip planning session
  */
 
@@ -30,7 +98,7 @@ export const PlanTripBody = zod.object({
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
   "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
-  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
+  "originCity": zod.string().optional().describe('Departure city for transport search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 })
 
@@ -39,7 +107,7 @@ export const PlanTripBody = zod.object({
 
 export const PlanTripResponse = zod.object({
   "sessionId": zod.string(),
-  "status": zod.enum(['planning', 'completed', 'failed']),
+  "status": zod.enum(['planning', 'completed', 'failed', 'booked']),
   "createdAt": zod.coerce.date(),
   "request": zod.object({
   "destination": zod.string().describe('Destination city and country'),
@@ -47,14 +115,13 @@ export const PlanTripResponse = zod.object({
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
   "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
-  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
+  "originCity": zod.string().optional().describe('Departure city for transport search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 }).optional()
 })
 
 
 /**
- * Server-Sent Events endpoint that streams real-time agent activity, negotiation, and itinerary progress
  * @summary Stream live agent updates via SSE
  */
 export const StreamTripUpdatesParams = zod.object({
@@ -76,24 +143,32 @@ export const GetTripParams = zod.object({
 
 export const GetTripResponse = zod.object({
   "sessionId": zod.string(),
-  "status": zod.enum(['planning', 'completed', 'failed']),
+  "status": zod.enum(['planning', 'completed', 'failed', 'booked']),
   "request": zod.object({
   "destination": zod.string().describe('Destination city and country'),
   "startDate": zod.coerce.date().describe('Trip start date (YYYY-MM-DD)'),
   "endDate": zod.coerce.date().describe('Trip end date (YYYY-MM-DD)'),
   "budget": zod.number().describe('Total budget in INR'),
   "travelers": zod.number().min(1).describe('Number of travelers'),
-  "originCity": zod.string().optional().describe('Departure city for flight search (e.g. Mumbai, Delhi)'),
+  "originCity": zod.string().optional().describe('Departure city for transport search (e.g. Mumbai, Delhi)'),
   "preferences": zod.string().optional().describe('Free-text travel preferences and interests')
 }),
-  "flight": zod.object({
+  "transport": zod.object({
   "id": zod.string(),
-  "airline": zod.string(),
+  "mode": zod.enum(['flight', 'train', 'road']),
+  "provider": zod.string(),
   "departure": zod.string(),
   "arrival": zod.string(),
   "price": zod.number(),
   "duration": zod.string(),
   "stops": zod.number().optional(),
+  "comparison": zod.string().nullish(),
+  "allOptions": zod.array(zod.object({
+  "mode": zod.enum(['flight', 'train', 'road']),
+  "price": zod.number().nullish(),
+  "duration": zod.string(),
+  "summary": zod.string()
+})).optional(),
   "reasoning": zod.string().nullish()
 }).optional(),
   "hotel": zod.object({
@@ -126,7 +201,7 @@ export const GetTripResponse = zod.object({
   "totalBudget": zod.number(),
   "spent": zod.number(),
   "remaining": zod.number(),
-  "flights": zod.number(),
+  "transport": zod.number(),
   "hotel": zod.number(),
   "activities": zod.number(),
   "miscellaneous": zod.number()
@@ -139,6 +214,7 @@ export const GetTripResponse = zod.object({
   "lastMessage": zod.string().nullish(),
   "updatedAt": zod.coerce.date().optional()
 })).optional(),
+  "bookingStatus": zod.enum(['idle', 'booking', 'booked']).optional(),
   "createdAt": zod.coerce.date(),
   "completedAt": zod.string().nullish()
 })
@@ -160,5 +236,18 @@ export const GetAgentStatusesResponseItem = zod.object({
   "updatedAt": zod.coerce.date().optional()
 })
 export const GetAgentStatusesResponse = zod.array(GetAgentStatusesResponseItem)
+
+
+/**
+ * @summary Trigger the Executioner Agent to simulate booking
+ */
+export const ExecuteTripParams = zod.object({
+  "sessionId": zod.coerce.string()
+})
+
+export const ExecuteTripResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
 
 
