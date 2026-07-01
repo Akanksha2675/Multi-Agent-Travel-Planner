@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TripRequest } from "@workspace/api-client-react";
-import { MapPin, Calendar as CalendarIcon, Wallet, Users, PlaneTakeoff, Navigation } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, Wallet, Users, Globe, Sparkles, Navigation } from "lucide-react";
 import { format } from "date-fns";
 
 const INDIAN_CITIES = [
@@ -96,8 +96,9 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
   return (
     <Card className="border-0 shadow-xl bg-white">
       <CardHeader className="text-center pb-8 pt-8">
-        <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-          <PlaneTakeoff className="h-8 w-8 text-primary" />
+        <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 relative">
+          <Globe className="h-8 w-8 text-primary" />
+          <Sparkles className="h-4 w-4 text-primary absolute -top-0.5 -right-0.5" />
         </div>
         <CardTitle className="text-3xl font-bold tracking-tight text-slate-900">
           Where to next?
@@ -120,7 +121,7 @@ export function TripRequestForm({ onSubmit, isSubmitting }: Props) {
                 name="originCity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-700 font-medium">Flying From</FormLabel>
+                    <FormLabel className="text-slate-700 font-medium">Travelling From</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g., Mumbai"

@@ -9,7 +9,7 @@ import { HotelCard } from "@/components/HotelCard";
 import { ExecutionerPanel } from "@/components/ExecutionerPanel";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut, User } from "lucide-react";
+import { Loader2, LogOut, User, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AuthUser } from "@/hooks/use-auth";
@@ -59,10 +59,10 @@ export default function Home({ user, onLogout }: Props) {
       <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold shadow-sm">
-              LA
+            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground shadow-sm">
+              <Bot className="h-5 w-5" />
             </div>
-            <h1 className="font-bold tracking-tight text-lg">Logistics Agent</h1>
+            <h1 className="font-bold tracking-tight text-lg">Trip Planner</h1>
           </div>
 
           <div className="flex items-center gap-3">
