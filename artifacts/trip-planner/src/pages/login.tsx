@@ -1,45 +1,53 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useAuthLogin, useAuthRegister } from "@workspace/api-client-react";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Bot, Globe, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthUser } from "@/hooks/use-auth";
-
-const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-const registerSchema = loginSchema.extend({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
-type RegisterValues = z.infer<typeof registerSchema>;
 
 interface Props {
   onLogin: (token: string, user: AuthUser) => void;
 }
 
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
+function validate(fields: { name?: string; email: string; password: string }, isRegister: boolean): FieldErrors {
+  const errors: FieldErrors = {};
+  if (isRegister && (!fields.name || fields.name.trim().length < 2)) {
+    errors.name = "Name must be at least 2 characters";
+  }
+  if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
+    errors.email = "Enter a valid email";
+  }
+  if (!fields.password || fields.password.length < 6) {
+    errors.password = "Password must be at least 6 characters";
+  }
+  return errors;
+}
+
 export default function LoginPage({ onLogin }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
 
-  const loginForm = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
-  });
-
-  const registerForm = useForm<RegisterValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { email: "", password: "", name: "" },
-  });
+  const switchMode = (next: "login" | "register") => {
+    setMode(next);
+    setErrors({});
+    setSubmitted(false);
+    setName("");
+    setEmail("");
+    setPassword("");
+  };
 
   const loginMutation = useAuthLogin({
     mutation: {
@@ -47,7 +55,11 @@ export default function LoginPage({ onLogin }: Props) {
         onLogin(data.token, data.user);
       },
       onError: (err: any) => {
-        toast({ title: "Login failed", description: err.data?.error ?? "Invalid credentials", variant: "destructive" });
+        toast({
+          title: "Login failed",
+          description: err?.data?.error ?? "Invalid email or password",
+          variant: "destructive",
+        });
       },
     },
   });
@@ -58,12 +70,37 @@ export default function LoginPage({ onLogin }: Props) {
         onLogin(data.token, data.user);
       },
       onError: (err: any) => {
-        toast({ title: "Registration failed", description: err.data?.error ?? "Could not register", variant: "destructive" });
+        toast({
+          title: "Registration failed",
+          description: err?.data?.error ?? "Could not create account",
+          variant: "destructive",
+        });
       },
     },
   });
 
   const isLoading = loginMutation.isPending || registerMutation.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+
+    const fieldErrors = validate({ name, email, password }, mode === "register");
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      return;
+    }
+    setErrors({});
+
+    if (mode === "login") {
+      loginMutation.mutate({ data: { email, password } });
+    } else {
+      registerMutation.mutate({ data: { name, email, password } });
+    }
+  };
+
+  const showError = (field: keyof FieldErrors) =>
+    submitted ? errors[field] : undefined;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -95,107 +132,77 @@ export default function LoginPage({ onLogin }: Props) {
 
           <Card className="border-0 shadow-xl bg-white">
             <CardContent className="pt-6 px-8 pb-8">
-              {mode === "login" ? (
-                <Form {...loginForm}>
-                  <form
-                    onSubmit={loginForm.handleSubmit((data) =>
-                      loginMutation.mutate({ data })
+              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                {mode === "register" && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Full Name
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Priya Sharma"
+                      className="h-11"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoComplete="name"
+                    />
+                    {showError("name") && (
+                      <p className="text-sm text-red-500 mt-1">{showError("name")}</p>
                     )}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={loginForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="you@example.com" className="h-11" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" className="h-11" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full h-11 font-medium" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Sign In
-                    </Button>
-                  </form>
-                </Form>
-              ) : (
-                <Form {...registerForm}>
-                  <form
-                    onSubmit={registerForm.handleSubmit((data) =>
-                      registerMutation.mutate({ data })
-                    )}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={registerForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Priya Sharma" className="h-11" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="you@example.com" className="h-11" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="At least 6 characters" className="h-11" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full h-11 font-medium" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Create Account
-                    </Button>
-                  </form>
-                </Form>
-              )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="h-11"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                  {showError("email") && (
+                    <p className="text-sm text-red-500 mt-1">{showError("email")}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Password
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder={mode === "register" ? "At least 6 characters" : "••••••••"}
+                    className="h-11"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={mode === "register" ? "new-password" : "current-password"}
+                  />
+                  {showError("password") && (
+                    <p className="text-sm text-red-500 mt-1">{showError("password")}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-11 font-medium"
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {mode === "login" ? "Sign In" : "Create Account"}
+                </Button>
+              </form>
 
               <div className="mt-6 text-center text-sm text-slate-500">
                 {mode === "login" ? (
                   <>
                     Don't have an account?{" "}
                     <button
-                      onClick={() => setMode("register")}
+                      type="button"
+                      onClick={() => switchMode("register")}
                       className="text-primary font-medium hover:underline"
                     >
                       Sign up
@@ -205,7 +212,8 @@ export default function LoginPage({ onLogin }: Props) {
                   <>
                     Already have an account?{" "}
                     <button
-                      onClick={() => setMode("login")}
+                      type="button"
+                      onClick={() => switchMode("login")}
                       className="text-primary font-medium hover:underline"
                     >
                       Sign in
