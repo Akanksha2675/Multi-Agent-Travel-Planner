@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlaneTakeoff, Loader2 } from "lucide-react";
+import { Bot, Globe, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthUser } from "@/hooks/use-auth";
 
@@ -69,18 +69,19 @@ export default function LoginPage({ onLogin }: Props) {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-slate-900 text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold shadow-sm">
-            LA
+          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground shadow-sm">
+            <Bot className="h-5 w-5" />
           </div>
-          <h1 className="font-bold tracking-tight text-lg">Logistics Agent</h1>
+          <h1 className="font-bold tracking-tight text-lg">Trip Planner</h1>
         </div>
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-              <PlaneTakeoff className="h-8 w-8 text-primary" />
+            <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 relative">
+              <Globe className="h-8 w-8 text-primary" />
+              <Sparkles className="h-4 w-4 text-primary absolute -top-0.5 -right-0.5" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
               {mode === "login" ? "Welcome back" : "Create your account"}
